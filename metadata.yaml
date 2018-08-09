@@ -1,0 +1,7 @@
+name: nginx-config
+summary: Layer to access NGINX config
+maintainer: Sander Borny <sander.borny@ugent.be>
+description: |
+  Layer to access NGINX config.
+tags:
+  - misc

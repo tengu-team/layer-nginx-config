@@ -216,6 +216,12 @@ class NginxConfig(NginxBase):
         return self._layer
 
     @property
+    def base_path(self): # TODO Name?
+        return os.path.join(self._juju_config_path,
+                            self._juju_app_name, 
+                            self._layer)
+
+    @property
     def http_available_path(self):
         path = os.path.join(self._juju_config_path,
                             self._juju_app_name, 

@@ -2,6 +2,8 @@
 
 This layer provides a lib for higher layers to access NGINX and setup configurations for the HTTP and Stream modules.
 
+For more information see the [documentation](docs/nginx_config_helper.md).
+
 # Writing NGINX HTTP / Stream config
 ## How it works
 

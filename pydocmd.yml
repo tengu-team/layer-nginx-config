@@ -1,0 +1,14 @@
+site_name: 'NGINX Config Layer'
+
+generate:
+  - nginx_config_helper.md:
+    - charms.layer.nginx_config_helper.NginxModule
+    - charms.layer.nginx_config_helper.NginxConfigError
+    - charms.layer.nginx_config_helper.NginxBase+
+    - charms.layer.nginx_config_helper.NginxMainConfig+
+    - charms.layer.nginx_config_helper.NginxConfig+
+
+pages:
+  - NginxModule: nginx_config_helper.md
+
+gens_dir: docs

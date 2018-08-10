@@ -12,6 +12,8 @@ import nginx
 
 
 class NginxConfigError(Exception):
+    """Exception to raise for errors in this module.
+    """
     pass
 
 
@@ -19,8 +21,8 @@ class NginxModule(Enum):
     """Enum of the valid NGINX modules.
 
     Valid options are:
-     * 'NginxModule.HTTP'
-     * 'NginxModule.STREAM'
+     * `NginxModule.HTTP`
+     * `NginxModule.STREAM`
     """
     # note: values should correspond to Class types in the python-nginx lib
     HTTP = 'Http'
@@ -30,6 +32,11 @@ class NginxModule(Enum):
 # CAUTION ! You can only use this class after 
 # the 'nginx-config.installed' flag is set !
 class NginxBase(object):
+    """NGINX base class.
+
+     **CAUTION** You can only use this class after 
+     the 'nginx-config.installed' flag is set !
+    """
 
     def __init__(self):
         kv = unitdata.kv()
@@ -42,23 +49,34 @@ class NginxBase(object):
 
     @property
     def juju_app_name(self):
+        """Name of the juju application with unit number.
+        """
         return self._juju_app_name
 
     @property
     def http_enabled_path(self):
+        """Path to the Http module include directory.
+        """
         return self._http_enabled_path
 
     @property
     def streams_enabled_path(self):
+        """Path to the Stream module include directory.
+        """
         return self._streams_enabled_path
 
     @property
     def backup_path(self):
+        """Path to the backup directory.
+        """
         return self._backup_path
 
     def validate_nginx(self):
         """Validates the NGINX configuration. 
         Raises NginxConfigError when invalid.
+
+        # Raises
+        `NginxConfigError`
         """
         try:
             cmd = run(['nginx', '-t'])
@@ -73,6 +91,9 @@ class NginxBase(object):
     def reload_nginx(self):
         """Reloads NGINX configuration.
         Raises NginxConfigError on error.
+
+        # Raises
+        `NginxConfigError`
         """
         try:
             cmd = run(['nginx', '-s', 'reload'])
@@ -86,6 +107,8 @@ class NginxBase(object):
 
 
 class NginxMainConfig(NginxBase):
+    """Represents the nginx.conf file.
+    """
 
     def __init__(self):
         NginxBase.__init__(self)
@@ -93,6 +116,8 @@ class NginxMainConfig(NginxBase):
 
     @property
     def nginx_config(self):
+        """The nginx.conf file as a nginx.Conf object.
+        """
         return self._nginx_config     
 
     def config_as_dict(self):
@@ -108,9 +133,9 @@ class NginxMainConfig(NginxBase):
     def add_include(self, include, nginx_module):
         """Adds an include value to the module.
 
-        Args:
-            include (str): Include string.
-            nginx_module (NginxModule): NGINX module.
+        # Parameters
+        `include` (str): Include string.
+        `nginx_module` (NginxModule): NGINX module.
         """
         cfg = self._nginx_config
         m = self.load_module(cfg, nginx_module)
@@ -123,11 +148,11 @@ class NginxMainConfig(NginxBase):
     def get_includes(self, nginx_module):
         """Return all includes values from a NGINX module.
 
-        Args:
-            nginx_module (NginxModule): NGINX module.
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module.
 
-        Returns:
-            list: A list containing all found include values.
+        # Returns
+        `list`: A list containing all found include values.
         """
         cfg = self._nginx_config
         m = self.load_module(cfg, nginx_module)  
@@ -137,12 +162,15 @@ class NginxMainConfig(NginxBase):
                 includes.append(m_cfg['include'])
         return includes    
 
-    def add_module(self, nginx_module): # Should module default to something?
+    def add_module(self, nginx_module):
         """Add a Http or Stream module to the NGINX config. If the module already
         exists, do nothing.
 
-        Args:
-            nginx_module (NginxModule): NGINX module.
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module.
+
+        # Raises
+        `NginxConfigError`
         """
         if (nginx_module != NginxModule.HTTP 
                 and nginx_module != NginxModule.STREAM):
@@ -160,15 +188,19 @@ class NginxMainConfig(NginxBase):
     def load_module(self, nginx_cfg, nginx_module):
         """Return a module from the main NGINX config file.
 
-        Args:
-            nginx_cfg (nginx.Conf): NGINX object
-            nginx_module (NginxModule): NGINX module.
+        # Parameters
+        `nginx_cfg` (nginx.Conf): NGINX object
+        `nginx_module` (NginxModule): NGINX module.
 
-        Returns:
-            nginx.Http || nginx.Stream
+        # Returns
+        `nginx.Http or nginx.Stream`
+
+        # Raises
+        `NginxConfigError`
         """
         try:
-            m = nginx_cfg.filter(nginx_module.value)[0] # There should only be one Http / Stream block
+            # There should only be one Http / Stream block
+            m = nginx_cfg.filter(nginx_module.value)[0] 
             return m
         except IndexError:
             err_msg = 'Could not find module {} in nginx.conf' \
@@ -185,8 +217,11 @@ class NginxMainConfig(NginxBase):
         """Creates a copy of the nginx.conf file to the destination. 
         Default to _backup_path if no destination is specified.
 
-        Args:
-            dst (str): Destination path.
+        # Parameters
+        `dst` (str or None): Destination path.
+
+        # Raises
+        `NginxConfigError`
         """
         try:
             src = self.config_path
@@ -202,8 +237,16 @@ class NginxMainConfig(NginxBase):
 
 
 class NginxConfig(NginxBase):
+    """Class for modifying NGINX configs.
+    """
 
     def __init__(self):
+        """Initializes the NginxConfig class by creating the
+        necessary directories.
+        
+        # Raises
+        `NginxConfigError`
+        """
         NginxBase.__init__(self)
         self._layer = _find_calling_layer()
         if not self.layer:
@@ -213,16 +256,22 @@ class NginxConfig(NginxBase):
 
     @property
     def layer(self):
+        """Name of the layer creating the class.
+        """
         return self._layer
 
     @property
-    def base_path(self): # TODO Name?
+    def base_path(self):
+        """Path to the layer directory.
+        """
         return os.path.join(self._juju_config_path,
                             self._juju_app_name, 
                             self._layer)
 
     @property
     def http_available_path(self):
+        """Path to the sites-available directory.
+        """
         path = os.path.join(self._juju_config_path,
                             self._juju_app_name, 
                             self._layer, 
@@ -231,22 +280,27 @@ class NginxConfig(NginxBase):
 
     @property
     def streams_available_path(self):
+        """Path to the streams-available directory.
+        """
         path = os.path.join(self._juju_config_path,
                             self._juju_app_name, 
                             self._layer, 
                             "streams-available")
         return path  
 
-    def write_config(self, nginx_module, config, filename, subdir=None):   # TODO catch filename collision
+    def write_config(self, nginx_module, config, filename, subdir=None): # TODO catch filename collision
         """Writes the config to the nginx_module available dir.
 
-        Args:
-            nginx_module (NginxModule): NGINX module. 
-            config (str): NGINX config to be written.
-            filename (str): Name of the config file.
-            subdir (str): If specified, the value of subdir will be appended
-                to the available_path variable. Use this if you want to 
-                write the config to a self made directory.
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module. 
+        `config` (str): NGINX config to be written.
+        `filename` (str): Name of the config file.
+        `subdir` (str or None): If specified, the value of subdir will be appended
+            to the available_path variable. Use this if you want to 
+            write the config to a self made directory.
+
+        # Raises
+        `NginxConfigError`
         """
         available_path = self._available_path_nginx_module(nginx_module)
 
@@ -262,11 +316,14 @@ class NginxConfig(NginxBase):
         """Creates symb links in the nginx_module enabled dir for all files
         in the available directory.
 
-        Args:
-            nginx_module (NginxModule): NGINX module. 
-            subdir (str): If specified, the value of subdir will be appended
-                to the available_path variable. Use this if you wrote configs
-                to a seperate directory.    
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module. 
+        `subdir` (str or None): If specified, the value of subdir will be appended
+            to the available_path variable. Use this if you wrote configs
+            to a seperate directory.
+
+        # Raises
+        `NginxConfigError`
         """    
         available_path = self._available_path_nginx_module(nginx_module)
         enabled_path = self._enabled_path_nginx_module(nginx_module)
@@ -282,12 +339,15 @@ class NginxConfig(NginxBase):
     def delete_all_config(self, nginx_module, subdir=None):
         """Delete all symb links and configs from the nginx_module.
 
-        Args:
-            nginx_module (NginxModule): NGINX module.
-            subdir (str): If specified, the value of subdir will be appended
-                to the available_path variable. Use this if you don't want to
-                delete all configs in the available directory but instead 
-                a self made subdir.
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module.
+        `subdir` (str or None): If specified, the value of subdir will be appended
+            to the available_path variable. Use this if you don't want to
+            delete all configs in the available directory but instead 
+            a self made subdir.
+
+        # Raises
+        `NginxConfigError`
         """
         available_path = self._available_path_nginx_module(nginx_module)
         enabled_path = self._enabled_path_nginx_module(nginx_module)  
@@ -301,9 +361,12 @@ class NginxConfig(NginxBase):
             os.remove(os.path.join(available_path, f))
         return self
 
-    def _ensure_unit_dir_exists(self): # Find better name
+    def _ensure_unit_dir_exists(self):
         """Creates two paths for the calling layer, one for http 
         configs and the other for stream configs.
+
+        # Raises
+        `NginxConfigError`
         """
         path = os.path.join(self._juju_config_path,
                                 self._juju_app_name, 
@@ -319,8 +382,11 @@ class NginxConfig(NginxBase):
     def _available_path_nginx_module(self, nginx_module):
         """Returns the path to the available dir for the nginx_module.
 
-        Args:
-            nginx_module (NginxModule): NGINX module.
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module.
+
+        # Raises
+        `NginxConfigError`
         """
         if nginx_module == NginxModule.HTTP:
             return self.http_available_path
@@ -332,8 +398,11 @@ class NginxConfig(NginxBase):
     def _enabled_path_nginx_module(self, nginx_module):
         """Returns the path to the enabled dir for the nginx_module.
 
-        Args:
-            nginx_module (NginxModule): NGINX module.
+        # Parameters
+        `nginx_module` (NginxModule): NGINX module.
+
+        # Raises
+        `NginxConfigError`
         """
         if nginx_module == NginxModule.HTTP:
             return self.http_enabled_path
@@ -343,7 +412,7 @@ class NginxConfig(NginxBase):
             raise NginxConfigError("Invalid NginxModule found.")
         
 
-def _find_calling_layer(): # Class Method or not?
+def _find_calling_layer():
     for frame in inspect.stack():
         fn = Path(frame[1])
         if fn.parent.stem not in ('reactive', 'layer', 'charms'):

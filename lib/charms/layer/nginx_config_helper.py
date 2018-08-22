@@ -155,12 +155,8 @@ class NginxMainConfig(NginxBase):
         `list`: A list containing all found include values.
         """
         cfg = self._nginx_config
-        m = self.load_module(cfg, nginx_module)  
-        includes = []
-        for m_cfg in m.as_dict:
-            if 'include' in m_cfg:
-                includes.append(m_cfg['include'])
-        return includes    
+        m = self.load_module(cfg, nginx_module)
+        return [key.value for key in m.filter('Key', 'include')]
 
     def add_module(self, nginx_module):
         """Add a Http or Stream module to the NGINX config. If the module already
@@ -332,7 +328,7 @@ class NginxConfig(NginxBase):
             available_path += '/' + subdir.lstrip('/')
 
         for f in os.listdir(available_path):
-            os.symlink(os.path.join(available_path, f),
+            os.symlink(os.path.join(available_path, f),    # TODO FileExistsError
                     os.path.join(enabled_path, f))
         return self
 

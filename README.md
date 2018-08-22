@@ -30,7 +30,7 @@ Each layer-directory has two default subdirectories `sites-available` and `strea
 
 ## Examples
 **Writing some config with the default directories**
-```
+```python
 from charms.layer.nginx_config_helper import (
     NginxConfig, 
     NginxConfigError, 
@@ -48,11 +48,16 @@ def tcp_update():
     try:
         nginxCfg = NginxConfig()
         
-        nginxCfg.delete_all_config(NginxModule.STREAM) \ # Remove symb links and delete old stream configs
-                .write_config(NginxModule.STREAM, tcp_config, tcp_filename) # Write the new config to the streams-available dir
-                .enable_all_config(NginxModule.STREAM) \ # Create symb links to streams-enabled
-                .validate_nginx() \ # Run a NGINX validation check
-                .reload_nginx() # Reload the NGINX config for all workers
+                # Remove symb links and delete old stream configs
+        nginxCfg.delete_all_config(NginxModule.STREAM) \ 
+                # Write the new config to the streams-available dir
+                .write_config(NginxModule.STREAM, tcp_config, tcp_filename) \ 
+                # Create symb links to streams-enabled
+                .enable_all_config(NginxModule.STREAM) \ 
+                # Run a NGINX validation check
+                .validate_nginx() \ 
+                # Reload the NGINX config for all workers
+                .reload_nginx() 
     except NginxConfigError as e:
         status_set('blocked', e)
         log(e)
@@ -61,6 +66,7 @@ def tcp_update():
 ```
 
 **Using custom directories**
+
 In some cases it can be helpful if you could split the NGINX configuration in more than one directory. For example if we have a charm that is setting up tcp and udp proxies from multiple interfaces, we might want seperate directories for tcp and udp. Our `streams-available` dir would look like this:
 ```
 /etc/nginx/

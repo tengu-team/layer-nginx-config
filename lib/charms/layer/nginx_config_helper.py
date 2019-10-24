@@ -284,7 +284,7 @@ class NginxConfig(NginxBase):
                             "streams-available")
         return path  
 
-    def write_config(self, nginx_module, config, filename, subdir=None): # TODO catch filename collision
+    def write_config(self, nginx_module, config, filename, subdir=None):
         """Writes the config to the nginx_module available dir.
 
         # Parameters
@@ -328,8 +328,11 @@ class NginxConfig(NginxBase):
             available_path += '/' + subdir.lstrip('/')
 
         for f in os.listdir(available_path):
-            os.symlink(os.path.join(available_path, f),    # TODO FileExistsError
-                    os.path.join(enabled_path, f))
+            try:
+                os.symlink(os.path.join(available_path, f),
+                        os.path.join(enabled_path, f))
+            except FileExistsError:
+                pass
         return self
 
     def delete_all_config(self, nginx_module, subdir=None):
